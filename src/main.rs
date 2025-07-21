@@ -1,7 +1,6 @@
 // use rand::Rng;
 // use std::cmp::Ordering;
 // use std::io;
-use pong::front_of_house::add_one;
 
 #[derive(Debug)]
 struct Rectangle {
