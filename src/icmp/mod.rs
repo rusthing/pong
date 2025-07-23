@@ -2,6 +2,7 @@ use crate::Executor;
 use dns_lookup::lookup_host;
 use std::net::IpAddr;
 
+#[derive(Copy, Clone)]
 pub struct IcmpExecutor {
     ip_addr: IpAddr,
 }
@@ -35,6 +36,10 @@ impl IcmpExecutor {
 }
 
 impl Executor for IcmpExecutor {
+    fn get_name(&self) -> String {
+        self.ip_addr.to_string()
+    }
+
     fn exec(&self) -> Result<(), String> {
         ping::new(self.ip_addr)
             .send()
