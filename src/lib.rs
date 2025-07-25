@@ -1,10 +1,5 @@
 pub mod config;
+pub mod duration_serde;
+pub mod executor;
 pub mod icmp;
-
-pub trait ExecutorConfig {}
-
-pub trait Executor {
-    fn get_name(&self) -> String;
-
-    fn exec(&self) -> Result<(), String>;
-}
+pub mod scheduler;

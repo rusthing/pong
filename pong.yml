@@ -1,1 +1,4 @@
 tasks:
+  - taskType: icmp
+    target: 127.0.0.1
+    cron: '0/2 * * * * *'
