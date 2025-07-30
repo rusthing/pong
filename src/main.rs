@@ -1,16 +1,12 @@
-use actix_web::{App, HttpServer, Responder, get, web};
 use chrono::Local;
 use clap::Parser;
 use env_logger::Builder;
 use log::{debug, info};
 use pong::config::Config;
 use pong::scheduler::Scheduler;
+use pong::targets::Targets;
+use pong::web_server::WebServer;
 use std::io::Write;
-
-#[get("/hello/{name}")]
-async fn greet(name: web::Path<String>) -> impl Responder {
-    format!("Hello {name}!")
-}
 
 /// 命令行参数
 #[derive(Parser, Debug)]
@@ -48,19 +44,15 @@ async fn main() -> std::io::Result<()> {
     debug!("加载配置文件");
     let config = Config::new(args.config_file, args.port);
 
-    Scheduler::new()
+    let targets = Targets::new();
+    Scheduler::new(targets.clone_tx())
         .await
         .expect("创建任务调度器失败")
         .start(config.tasks)
         .await
         .expect("启动任务调度器失败");
 
-    HttpServer::new(|| App::new().service(greet))
-        .bind(("127.0.0.1", config.port.unwrap()))?
-        .bind(("::1", config.port.unwrap()))?
-        .run()
-        .await
-        .expect("服务器启动失败");
+    WebServer::new(config.port.unwrap(), targets).run().await;
 
     info!("退出程序");
     Ok(())

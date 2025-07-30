@@ -6,7 +6,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 /// 目标状态
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TargetStatus {
     /// 任务类型
     pub task_type: TaskType,

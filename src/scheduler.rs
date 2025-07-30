@@ -1,25 +1,22 @@
 use crate::config::TaskConfig;
 use crate::executor::Executor;
 use crate::icmp::IcmpExecutor;
-use crate::targets::{TargetStatus, Targets};
+use crate::targets::TargetStatus;
 use log::{debug, info, trace};
-use std::sync::Arc;
+use std::sync::{Arc, mpsc};
 use tokio::time::Instant;
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 pub struct Scheduler {
     scheduler: JobScheduler,
-    targets: Targets,
+    tx: mpsc::Sender<TargetStatus>,
 }
 
 impl Scheduler {
-    pub async fn new() -> Result<Self, JobSchedulerError> {
+    pub async fn new(tx: mpsc::Sender<TargetStatus>) -> Result<Self, JobSchedulerError> {
         debug!("创建任务调度器");
         let scheduler = JobScheduler::new().await?;
-        Ok(Self {
-            scheduler,
-            targets: Targets::new(),
-        })
+        Ok(Self { scheduler, tx })
     }
 
     pub async fn start(&self, tasks: Vec<TaskConfig>) -> Result<(), JobSchedulerError> {
@@ -35,10 +32,10 @@ impl Scheduler {
                     .expect("Icmp执行器创建失败"),
             );
 
-            let tx = self.targets.clone_tx();
+            let tx = self.tx.clone();
 
             self.scheduler
-                .add(Job::new_async(task.cron.clone(), move |_uuid, _| {
+                .add(Job::new_async(task.cron.clone(), move |_uuid, _schedule| {
                     let task_target = task_target.clone();
                     let task_type = task_type.clone();
                     let task_desc = task_desc.clone();
