@@ -2,14 +2,10 @@ use actix_web::{App, HttpServer, Responder, get, web};
 use chrono::Local;
 use clap::Parser;
 use env_logger::Builder;
-use log::{debug, info, trace};
+use log::{debug, info};
 use pong::config::Config;
-use pong::executor::Executor;
-use pong::icmp::IcmpExecutor;
 use pong::scheduler::Scheduler;
 use std::io::Write;
-use std::time::Instant;
-use tokio_cron_scheduler::{Job, JobScheduler};
 
 #[get("/hello/{name}")]
 async fn greet(name: web::Path<String>) -> impl Responder {
@@ -31,16 +27,6 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let mut list = vec![1, 2, 3];
-    println!("Before defining closure: {list:?}");
-
-    let mut borrows_mutably = || list.push(7);
-
-    // println!("Before calling closure: {list:?}");    // 错误！
-    borrows_mutably();
-    list.push(8);
-    println!("After calling closure: {list:?}");
-
     // 初始化日志实现库
     Builder::from_default_env()
         .format(|buf, record| {
@@ -62,8 +48,12 @@ async fn main() -> std::io::Result<()> {
     debug!("加载配置文件");
     let config: Config = Config::new(args.config_file, args.port);
 
-    let scheduler = Scheduler::new().await;
-    scheduler.start(config.tasks).await;
+    Scheduler::new()
+        .await
+        .expect("创建任务调度器失败")
+        .start(config.tasks)
+        .await
+        .expect("启动任务调度器失败");
 
     HttpServer::new(|| App::new().service(greet))
         .bind(("127.0.0.1", config.port.unwrap()))?

@@ -8,7 +8,7 @@ build = "build.rs"
 dns-lookup = "2.0.4"
 ping = "0.6.1"
 tokio-cron-scheduler = "0.14.0"
-tokio = { version = "1.46.1", features = ["rt", "rt-multi-thread", "macros", "signal"] }
+tokio = { version = "1.47.0", features = ["rt", "rt-multi-thread", "macros", "signal"] }
 log = "0.4.27"
 env_logger = "0.11.8"
 chrono = "0.4.41"

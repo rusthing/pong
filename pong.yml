@@ -2,3 +2,12 @@ tasks:
   - taskType: icmp
     target: 127.0.0.1
     cron: '0/2 * * * * *'
+  - taskType: icmp
+    target: 192.168.1.1
+    cron: '0/2 * * * * *'
+  - taskType: icmp
+    target: www.baidu.com
+    cron: '0/2 * * * * *'
+  - taskType: icmp
+    target: www.google.com
+    cron: '0/2 * * * * *'
