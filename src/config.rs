@@ -2,6 +2,7 @@ use crate::duration_serde;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::time::Duration;
+use strum_macros::Display;
 
 /// 配置文件结构
 #[derive(Debug, Serialize, Deserialize)]
@@ -13,7 +14,7 @@ pub struct Config {
 }
 
 /// 任务类型
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Display, Clone)]
 pub enum TaskType {
     /// ping
     #[serde(rename = "icmp")]

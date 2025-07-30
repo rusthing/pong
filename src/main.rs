@@ -46,7 +46,7 @@ async fn main() -> std::io::Result<()> {
     let args = Args::parse();
 
     debug!("加载配置文件");
-    let config: Config = Config::new(args.config_file, args.port);
+    let config = Config::new(args.config_file, args.port);
 
     Scheduler::new()
         .await

@@ -10,8 +10,8 @@ pub struct IcmpExecutor {
 }
 
 impl IcmpExecutor {
-    /// # 构造函数
-    /// ## 参数
+    /// 构造函数
+    /// # 参数
     /// * `host` - 一个字符串切片，表示要解析的主机名或 IP 地址
     /// * `timeout` - 一个 `Duration`，表示超时时间
     pub fn new(host: String, timeout: Duration) -> Result<Self, String> {
@@ -20,10 +20,10 @@ impl IcmpExecutor {
         Ok(Self { ip_addr, timeout })
     }
 
-    /// # 解析主机的字符串成IP地址
-    /// ## 参数
+    /// 解析主机的字符串成IP地址
+    /// # 参数
     /// * `host` - 一个字符串切片，表示要解析的主机名或 IP 地址
-    /// ## 返回值
+    /// # 返回值
     /// 如果解析成功，则返回一个 `IpAddr`; 如果解析失败，则返回一个包含错误信息的 `String`
     /// ```
     fn parse_host(host: &str) -> Result<IpAddr, String> {

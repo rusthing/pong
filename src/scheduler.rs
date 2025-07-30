@@ -1,6 +1,7 @@
 use crate::config::TaskConfig;
 use crate::executor::Executor;
 use crate::icmp::IcmpExecutor;
+use crate::targets::{TargetStatus, Targets};
 use log::{debug, info, trace};
 use std::sync::Arc;
 use tokio::time::Instant;
@@ -8,40 +9,57 @@ use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
 pub struct Scheduler {
     scheduler: JobScheduler,
+    targets: Targets,
 }
 
 impl Scheduler {
     pub async fn new() -> Result<Self, JobSchedulerError> {
         debug!("创建任务调度器");
         let scheduler = JobScheduler::new().await?;
-        Ok(Self { scheduler })
+        Ok(Self {
+            scheduler,
+            targets: Targets::new(),
+        })
     }
 
     pub async fn start(&self, tasks: Vec<TaskConfig>) -> Result<(), JobSchedulerError> {
         debug!("启动任务调度器");
         for task in tasks.iter() {
-            let task_target = task.target.clone();
             let task_desc = format!("{:?}", task);
             info!("添加任务: {}", task_desc);
+            let task_target = task.target.clone();
+            let task_type = task.task_type.clone();
             debug!("创建Icmp执行器");
             let executor: Arc<dyn Executor + Send + Sync> = Arc::new(
                 IcmpExecutor::new(task.target.clone(), task.timeout.unwrap())
                     .expect("Icmp执行器创建失败"),
             );
 
+            let tx = self.targets.clone_tx();
+
             self.scheduler
                 .add(Job::new_async(task.cron.clone(), move |_uuid, _| {
                     let task_target = task_target.clone();
+                    let task_type = task_type.clone();
                     let task_desc = task_desc.clone();
                     let executor_name = executor.get_name().clone();
                     let executor = executor.clone();
+                    let tx = tx.clone();
                     Box::pin({
                         async move {
                             let start_time = Instant::now();
                             trace!("开始执行任务: {}:{}", executor_name, task_desc);
-                            executor
-                                .exec()
-                                .expect(&format!("任务执行失败: {}:{}", executor_name, task_desc));
+
+                            tx.send(TargetStatus {
+                                task_type,
+                                target: task_target.clone(),
+                                is_online: match executor.exec() {
+                                    Ok(_result) => true,
+                                    Err(_err) => false,
+                                },
+                            })
+                            .expect("");
+
                             let elapsed = start_time.elapsed().as_millis();
                             info!(
                                 "Ping {} --> {} --> Pong in {} ms",
