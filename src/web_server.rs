@@ -1,11 +1,11 @@
 use crate::targets::Targets;
 use actix_web::dev::Server;
 use actix_web::web::Data;
-use actix_web::{get, App, HttpServer, Responder};
+use actix_web::{App, HttpResponse, HttpServer, Responder, get};
 
 #[get("/hello")]
 async fn greet(targets: Data<Targets>) -> impl Responder {
-    format!("Hello {:?}!", targets.get_all())
+    HttpResponse::Ok().json(targets.get_all())
 }
 
 pub struct WebServer {

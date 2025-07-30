@@ -4,9 +4,10 @@ use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
+use serde::Serialize;
 
 /// 目标状态
-#[derive(Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 pub struct TargetStatus {
     /// 任务类型
     pub task_type: TaskType,
