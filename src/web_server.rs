@@ -2,7 +2,7 @@ use crate::targets::Targets;
 use actix_web::dev::Server;
 use actix_web::web::Data;
 use actix_web::{App, HttpResponse, HttpServer, Responder, get};
-use log::{debug, trace};
+use log::debug;
 use prometheus::{Encoder, IntGaugeVec, Registry, TextEncoder, opts};
 
 #[get("/metrics")]
