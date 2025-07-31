@@ -14,7 +14,6 @@ pub struct Scheduler {
 
 impl Scheduler {
     pub async fn new(tx: mpsc::Sender<TargetStatus>) -> Result<Self, JobSchedulerError> {
-        debug!("创建任务调度器");
         let scheduler = JobScheduler::new().await?;
         Ok(Self { scheduler, tx })
     }

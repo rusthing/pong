@@ -44,6 +44,7 @@ async fn main() -> std::io::Result<()> {
     debug!("加载配置文件");
     let config = Config::new(args.config_file, args.port);
 
+    debug!("创建任务调度器");
     let targets = Targets::new();
     Scheduler::new(targets.clone_tx())
         .await
