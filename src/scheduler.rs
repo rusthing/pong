@@ -19,13 +19,13 @@ impl Scheduler {
     }
 
     pub async fn start(&self, tasks: Vec<TaskConfig>) -> Result<(), JobSchedulerError> {
-        debug!("启动任务调度器");
+        debug!("启动任务调度器...");
         for task in tasks.iter() {
             let task_desc = format!("{:?}", task);
             info!("添加任务: {}", task_desc);
             let task_target = task.target.clone();
             let task_type = task.task_type.clone();
-            debug!("创建Icmp执行器");
+            debug!("创建Icmp执行器...");
             let executor: Arc<dyn Executor + Send + Sync> = Arc::new(
                 IcmpExecutor::new(task.target.clone(), task.timeout.unwrap())
                     .expect("Icmp执行器创建失败"),
@@ -67,12 +67,12 @@ impl Scheduler {
                 .await?;
         }
 
-        debug!("启动任务调度器");
+        debug!("启动任务调度器...");
         self.scheduler.start().await
     }
 
     pub async fn stop(&mut self) {
-        debug!("停止任务调度器");
+        debug!("停止任务调度器...");
         self.scheduler.shutdown().await.expect("任务调度器停止失败");
     }
 }

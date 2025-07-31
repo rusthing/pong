@@ -1,37 +1,34 @@
+use crate::prometheus_metrics::PrometheusMetrics;
 use crate::targets::Targets;
 use actix_web::dev::Server;
 use actix_web::web::Data;
 use actix_web::{App, HttpResponse, HttpServer, Responder, get};
 use log::debug;
-use prometheus::{Encoder, IntGaugeVec, Registry, TextEncoder, opts};
+use prometheus::{Encoder, TextEncoder};
+use tokio::time::Instant;
 
 #[get("/metrics")]
-async fn metrics(targets: Data<Targets>) -> impl Responder {
-    debug!("receive http request: GET:/metrics");
+async fn metrics(
+    targets: Data<Targets>,
+    prometheus_metrics: Data<PrometheusMetrics>,
+) -> impl Responder {
+    debug!("接收到Http请求: GET:/metrics");
 
-    let encoder = TextEncoder::new();
-
-    let registry = Registry::new();
-    // 定义带标签的GaugeVec
-    let http_requests =
-        IntGaugeVec::new(opts!("pong_host_online", "Is the host online?"), &["host"]).unwrap();
-
-    // 注册到注册表
-    registry.register(Box::new(http_requests.clone())).unwrap();
-
+    let start_time = Instant::now();
     let statuses = targets.get_all();
+    let elapsed = start_time.elapsed().as_millis();
+    debug!("获取所有目标状态耗时: {}ms", elapsed);
     for (host, status) in statuses {
         // 更新不同标签的Gauge值
-        http_requests
-            .with_label_values(&[host])
-            .set(status.is_online as i64);
+        prometheus_metrics.update_metric(host, status.is_online);
     }
 
     // 收集指标数据
-    let metric_families = registry.gather();
+    let metric_families = prometheus_metrics.gather();
 
     // 编码为 Prometheus 文本格式
     let mut buffer = vec![];
+    let encoder = TextEncoder::new();
     encoder.encode(&metric_families, &mut buffer).unwrap();
 
     // 返回响应
@@ -47,11 +44,13 @@ pub struct WebServer {
 }
 
 impl WebServer {
-    pub fn new(port: u16, targets: Targets) -> Self {
-        let data = Data::new(targets);
+    pub fn new(port: u16, targets: Targets, prometheus_metrics: PrometheusMetrics) -> Self {
+        let targets_data = Data::new(targets);
+        let prometheus_metrics_data = Data::new(prometheus_metrics);
         let server = HttpServer::new(move || {
             App::new()
-                .app_data(data.clone())
+                .app_data(targets_data.clone())
+                .app_data(prometheus_metrics_data.clone())
                 .service(metrics)
                 .service(health)
         })

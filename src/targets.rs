@@ -1,10 +1,10 @@
 use crate::config::TaskType;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
-use serde::Serialize;
 
 /// 目标状态
 #[derive(Serialize, Clone, Debug)]
@@ -34,14 +34,17 @@ impl Targets {
         let statuses_clone = statuses.clone();
         thread::spawn(move || {
             loop {
-                let new_status = rx.recv().unwrap();
-                let key = Self::calc_key(&new_status.task_type, &new_status.target);
-                let mut statuses = statuses_clone.lock().unwrap();
-                let old_status = statuses.get(&key);
-                if old_status.is_none() || old_status.unwrap().is_online != new_status.is_online {
-                    statuses.insert(key, new_status);
+                {
+                    let new_status = rx.recv().unwrap();
+                    let key = Self::calc_key(&new_status.task_type, &new_status.target);
+                    let mut statuses = statuses_clone.lock().unwrap();
+                    let old_status = statuses.get(&key);
+                    if old_status.is_none() || old_status.unwrap().is_online != new_status.is_online
+                    {
+                        statuses.insert(key, new_status);
+                    }
                 }
-                sleep(Duration::from_secs(1));
+                sleep(Duration::from_secs(1));          // 注意要放在作用域外，先释放锁
             }
         });
         Self { tx, statuses }
@@ -61,14 +64,4 @@ impl Targets {
         self.statuses.lock().unwrap().clone()
     }
 
-    /// 添加获取特定目标状态的方法
-    /// # 参数:
-    /// * `task_type` - 任务类型
-    /// * `target` - 目标
-    /// # 返回值
-    /// 如果锁定成功返回一个 `TargetStatus`，否则返回 `None`
-    pub fn get_by_one(&self, task_type: &TaskType, target: &str) -> Option<TargetStatus> {
-        let key = Self::calc_key(task_type, target);
-        self.statuses.lock().unwrap().get(&key).cloned()
-    }
 }

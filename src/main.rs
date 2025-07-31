@@ -3,6 +3,7 @@ use clap::Parser;
 use env_logger::Builder;
 use log::{debug, info};
 use pong::config::Config;
+use pong::prometheus_metrics::PrometheusMetrics;
 use pong::scheduler::Scheduler;
 use pong::targets::Targets;
 use pong::web_server::WebServer;
@@ -38,13 +39,16 @@ async fn main() -> std::io::Result<()> {
 
     info!("程序正在启动……");
 
-    debug!("解析命令行参数");
+    debug!("解析命令行参数...");
     let args = Args::parse();
 
-    debug!("加载配置文件");
+    debug!("加载配置文件...");
     let config = Config::new(args.config_file, args.port);
 
-    debug!("创建任务调度器");
+    debug!("创建PrometheusMetrics...");
+    let prometheus_metrics = PrometheusMetrics::new();
+
+    debug!("创建任务调度器...");
     let targets = Targets::new();
     Scheduler::new(targets.clone_tx())
         .await
@@ -53,7 +57,9 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("启动任务调度器失败");
 
-    WebServer::new(config.port.unwrap(), targets).run().await;
+    WebServer::new(config.port.unwrap(), targets, prometheus_metrics)
+        .run()
+        .await;
 
     info!("退出程序");
     Ok(())
