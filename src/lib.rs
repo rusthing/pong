@@ -1,7 +1,7 @@
 pub mod config;
 pub mod duration_serde;
 pub mod executor;
-pub mod icmp;
+pub mod icmp_executor;
 pub mod prometheus_metrics;
 pub mod scheduler;
 pub mod targets;

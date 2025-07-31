@@ -57,6 +57,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("启动任务调度器失败");
 
+    debug!("创建Web服务器并运行...");
     WebServer::new(config.port.unwrap(), targets, prometheus_metrics)
         .run()
         .await;

@@ -1,6 +1,6 @@
 use crate::config::TaskConfig;
 use crate::executor::Executor;
-use crate::icmp::IcmpExecutor;
+use crate::icmp_executor::IcmpExecutor;
 use crate::targets::TargetStatus;
 use log::{debug, info, trace};
 use std::sync::{Arc, mpsc};
@@ -34,35 +34,54 @@ impl Scheduler {
             let tx = self.tx.clone();
 
             self.scheduler
-                .add(Job::new_async(task.cron.clone(), move |_uuid, _schedule| {
+                .add(Job::new(task.cron.clone(), move |_uuid, _schedule| {
+                    let start_time = Instant::now();
                     let task_target = task_target.clone();
                     let task_type = task_type.clone();
                     let task_desc = task_desc.clone();
                     let executor_name = executor.get_name().clone();
-                    let executor = executor.clone();
+                    // let executor = executor.clone();
                     let tx = tx.clone();
-                    Box::pin({
-                        async move {
-                            let start_time = Instant::now();
-                            trace!("开始执行任务: {}:{}", executor_name, task_desc);
+                    trace!("开始执行任务: {}:{}", executor_name, task_desc);
 
-                            tx.send(TargetStatus {
-                                task_type,
-                                target: task_target.clone(),
-                                is_online: match executor.exec() {
-                                    Ok(_result) => true,
-                                    Err(_err) => false,
-                                },
-                            })
-                            .expect("");
-
-                            let elapsed = start_time.elapsed().as_millis();
-                            info!(
-                                "Ping {} --> {} --> Pong in {} ms",
-                                executor_name, task_target, elapsed
-                            );
-                        }
+                    tx.send(TargetStatus {
+                        task_type,
+                        target: task_target.clone(),
+                        is_online: match executor.exec() {
+                            Ok(_result) => true,
+                            Err(_err) => false,
+                        },
                     })
+                    .expect("发送消息异常");
+
+                    let elapsed = start_time.elapsed().as_millis();
+                    info!(
+                        "Ping {} --> {} --> Pong in {} ms",
+                        executor_name, task_target, elapsed
+                    );
+
+                    // Box::pin({
+                    //     async move {
+                    //         let start_time = Instant::now();
+                    //         trace!("开始执行任务: {}:{}", executor_name, task_desc);
+                    //
+                    //         tx.send(TargetStatus {
+                    //             task_type,
+                    //             target: task_target.clone(),
+                    //             is_online: match executor.exec() {
+                    //                 Ok(_result) => true,
+                    //                 Err(_err) => false,
+                    //             },
+                    //         })
+                    //         .expect("发送消息异常");
+                    //
+                    //         let elapsed = start_time.elapsed().as_millis();
+                    //         info!(
+                    //             "Ping {} --> {} --> Pong in {} ms",
+                    //             executor_name, task_target, elapsed
+                    //         );
+                    //     }
+                    // })
                 })?)
                 .await?;
         }

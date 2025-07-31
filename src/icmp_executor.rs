@@ -1,5 +1,6 @@
 use crate::executor::Executor;
 use dns_lookup::lookup_host;
+use log::error;
 use std::net::IpAddr;
 use std::time::Duration;
 
@@ -47,7 +48,11 @@ impl Executor for IcmpExecutor {
         ping::new(self.ip_addr)
             .timeout(self.timeout)
             .send()
-            .map_err(|e| format!("Ping失败: {e}"))?;
+            .map_err(|e| {
+                let msg = format!("Ping失败: {e}");
+                error!("{}", msg);
+                msg
+            })?;
         Ok(())
     }
 }
