@@ -1,12 +1,16 @@
-taskGroups:
+web_server:
+  bind:
+    - 0.0.0.0
+    - '::'
+task_groups:
   - tasks:
-      - taskType: icmp
+      - task_type: icmp
         target: www.google.com
-      - taskType: icmp
+      - task_type: icmp
         target: 127.0.0.1
-      - taskType: icmp
+      - task_type: icmp
         target: 192.168.1.1
-      - taskType: icmp
+      - task_type: icmp
         target: www.baidu.com
     interval: 2s
     timeout: 5s

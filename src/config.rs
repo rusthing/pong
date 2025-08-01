@@ -8,19 +8,45 @@ use strum_macros::Display;
 /// 配置文件结构
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    /// Web服务器的端口号
-    pub port: Option<u16>,
+    /// Web服务器
+    #[serde(default = "web_server_default")]
+    pub web_server: WebServerConfig,
+
     /// 任务列表
-    #[serde(rename = "taskGroups")]
     pub task_groups: Vec<TaskGroupConfig>,
+}
+
+fn web_server_default() -> WebServerConfig {
+    WebServerConfig {
+        bind: bind_default(),
+        port: port_default(),
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WebServerConfig {
+    /// 绑定的IP地址
+    #[serde(default = "bind_default")]
+    pub bind: Vec<String>,
+    /// Web服务器的端口号
+    #[serde(default = "port_default")]
+    pub port: Option<u16>,
+}
+
+fn bind_default() -> Vec<String> {
+    vec![String::from("0.0.0.0")]
+}
+
+fn port_default() -> Option<u16> {
+    Some(6780)
 }
 
 /// 任务类型
 #[derive(Debug, Serialize, Deserialize, Display, Clone)]
 pub enum TaskType {
-    /// ping
+    /// icmp
     #[serde(rename = "icmp")]
-    Icmp,
+    ICMP,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,7 +72,6 @@ fn timeout_default() -> Option<Duration> {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TaskConfig {
     /// 任务类型
-    #[serde(rename = "taskType")]
     pub task_type: TaskType,
     /// 目标
     pub target: String,
@@ -66,11 +91,7 @@ impl Config {
         let mut config: Config = serde_yaml::from_str(content.as_str()).expect("解析配置文件失败");
         // 如果命令行指定了端口，则使用命令行指定的端口
         if port.is_some() {
-            config.port = port;
-        }
-        // 如果配置文件中没有指定端口，则使用默认端口6780
-        else if config.port.is_none() {
-            config.port = Some(6780);
+            config.web_server.port = port;
         }
 
         info!("检查配置文件的配置是否符合规范");

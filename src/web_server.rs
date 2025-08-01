@@ -1,8 +1,9 @@
+use crate::config::WebServerConfig;
 use crate::prometheus_metrics::PrometheusMetrics;
 use crate::targets::Targets;
 use actix_web::dev::Server;
 use actix_web::web::Data;
-use actix_web::{App, HttpResponse, HttpServer, Responder, get};
+use actix_web::{get, App, HttpResponse, HttpServer, Responder};
 use log::debug;
 use prometheus::{Encoder, TextEncoder};
 use tokio::time::Instant;
@@ -40,26 +41,33 @@ async fn health() -> impl Responder {
 }
 
 pub struct WebServer {
-    server: Server,
+    pub server: Server,
 }
 
 impl WebServer {
-    pub fn new(port: u16, targets: Targets, prometheus_metrics: PrometheusMetrics) -> Self {
+    pub fn new(
+        web_server_config: WebServerConfig,
+        targets: Targets,
+        prometheus_metrics: PrometheusMetrics,
+    ) -> Self {
         let targets_data = Data::new(targets);
         let prometheus_metrics_data = Data::new(prometheus_metrics);
-        let server = HttpServer::new(move || {
+        let mut server = HttpServer::new(move || {
             App::new()
                 .app_data(targets_data.clone())
                 .app_data(prometheus_metrics_data.clone())
                 .service(metrics)
                 .service(health)
-        })
-        .bind(("127.0.0.1", port))
-        .unwrap()
-        .bind(("::1", port))
-        .unwrap()
-        .run();
-        Self { server }
+        });
+
+        for bind in web_server_config.bind {
+            let port = web_server_config.port.unwrap();
+            server = server.bind((bind, port)).unwrap();
+        }
+
+        Self {
+            server: server.run(),
+        }
     }
 
     pub async fn run(self) {

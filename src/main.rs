@@ -52,8 +52,8 @@ async fn main() -> std::io::Result<()> {
     let targets = Targets::new();
     Scheduler::new(targets.clone_tx()).start(config.task_groups);
 
-    debug!("创建Web服务器并运行...");
-    WebServer::new(config.port.unwrap(), targets, prometheus_metrics)
+    info!("创建Web服务器({:?})并运行...", config.web_server);
+    WebServer::new(config.web_server, targets, prometheus_metrics)
         .run()
         .await;
 
