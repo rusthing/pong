@@ -15,10 +15,10 @@ impl IcmpExecutor {
     /// # 参数
     /// * `host` - 一个字符串切片，表示要解析的主机名或 IP 地址
     /// * `timeout` - 一个 `Duration`，表示超时时间
-    pub fn new(host: String, timeout: Duration) -> Result<Self, String> {
+    pub fn new(host: String, timeout: Duration) -> Self {
         // 解析主机的字符串成IP地址
-        let ip_addr = Self::parse_host(&host)?;
-        Ok(Self { ip_addr, timeout })
+        let ip_addr = Self::parse_host(&host).unwrap();
+        Self { ip_addr, timeout }
     }
 
     /// 解析主机的字符串成IP地址

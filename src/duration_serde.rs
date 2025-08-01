@@ -1,3 +1,4 @@
+use humantime::parse_duration;
 use serde::{Deserialize, Deserializer, Serializer};
 use std::time::Duration;
 
@@ -17,25 +18,9 @@ where
 {
     let s: Option<String> = Option::deserialize(deserializer)?;
     match s {
-        Some(s) => {
-            Ok(Some(if s.ends_with("ms") {
-                let sec = s.trim_end_matches("ms").parse::<u64>().unwrap();
-                Duration::from_millis(sec)
-            } else if s.ends_with('s') {
-                let sec = s.trim_end_matches('s').parse::<u64>().unwrap();
-                Duration::from_secs(sec)
-            } else if s.ends_with('m') {
-                let sec = s.trim_end_matches('s').parse::<u64>().unwrap();
-                Duration::from_secs(sec * 60)
-            } else if s.ends_with('h') {
-                let sec = s.trim_end_matches('h').parse::<u64>().unwrap();
-                Duration::from_secs(sec * 3600)
-            } else {
-                // 默认按秒解析
-                let sec = s.parse::<u64>().unwrap();
-                Duration::from_secs(sec)
-            }))
-        }
+        Some(s) => Ok(Some(
+            parse_duration(&s).expect("不正确的Duration字符串，支持的格式如5s、3m、6h"),
+        )),
         None => Ok(None),
     }
 }

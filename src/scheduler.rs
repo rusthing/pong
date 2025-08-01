@@ -1,97 +1,101 @@
-use crate::config::TaskConfig;
+use crate::config::{TaskGroupConfig, TaskType};
 use crate::executor::Executor;
 use crate::icmp_executor::IcmpExecutor;
 use crate::targets::TargetStatus;
 use log::{debug, info, trace};
-use std::sync::{Arc, mpsc};
-use tokio::time::Instant;
-use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
+use std::fmt;
+use std::fmt::{Debug, Formatter};
+use std::sync::mpsc::Sender;
+use std::sync::Arc;
+use tokio::time::{sleep, Instant};
+
+#[derive(Clone)]
+struct Task {
+    task_type: TaskType,
+    target: String,
+    target_status_tx: Sender<TargetStatus>,
+    executor: Arc<dyn Executor + Send + Sync>,
+}
+
+impl Debug for Task {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Task")
+            .field("task_type", &self.task_type)
+            .field("target", &self.target)
+            .field("executor", &self.executor.get_name())
+            .finish()
+    }
+}
 
 pub struct Scheduler {
-    scheduler: JobScheduler,
-    tx: mpsc::Sender<TargetStatus>,
+    /// 目标状态的消息发送通道
+    target_status_tx: Sender<TargetStatus>,
 }
 
 impl Scheduler {
-    pub async fn new(tx: mpsc::Sender<TargetStatus>) -> Result<Self, JobSchedulerError> {
-        let scheduler = JobScheduler::new().await?;
-        Ok(Self { scheduler, tx })
+    pub fn new(target_status_tx: Sender<TargetStatus>) -> Self {
+        Self { target_status_tx }
     }
 
-    pub async fn start(&self, tasks: Vec<TaskConfig>) -> Result<(), JobSchedulerError> {
+    pub fn start(&self, task_groups: Vec<TaskGroupConfig>) {
         debug!("启动任务调度器...");
-        for task in tasks.iter() {
-            let task_desc = format!("{:?}", task);
-            info!("添加任务: {}", task_desc);
-            let task_target = task.target.clone();
-            let task_type = task.task_type.clone();
-            debug!("创建Icmp执行器...");
-            let executor: Arc<dyn Executor + Send + Sync> = Arc::new(
-                IcmpExecutor::new(task.target.clone(), task.timeout.unwrap())
-                    .expect("Icmp执行器创建失败"),
-            );
-
-            let tx = self.tx.clone();
-
-            self.scheduler
-                .add(Job::new(task.cron.clone(), move |_uuid, _schedule| {
-                    let start_time = Instant::now();
-                    let task_target = task_target.clone();
-                    let task_type = task_type.clone();
-                    let task_desc = task_desc.clone();
-                    let executor_name = executor.get_name().clone();
-                    // let executor = executor.clone();
-                    let tx = tx.clone();
-                    trace!("开始执行任务: {}:{}", executor_name, task_desc);
-
-                    tx.send(TargetStatus {
-                        task_type,
-                        target: task_target.clone(),
-                        is_online: match executor.exec() {
-                            Ok(_result) => true,
-                            Err(_err) => false,
-                        },
+        for task_group in task_groups.into_iter() {
+            info!("添加任务组: {:?}", task_group);
+            // 将配置中的任务转成要执行的任务
+            let tasks: Arc<Vec<Task>> = Arc::new(
+                task_group
+                    .tasks
+                    .iter()
+                    .map(|task| Task {
+                        task_type: task.task_type.clone(),
+                        target: task.target.clone(),
+                        target_status_tx: self.target_status_tx.clone(),
+                        executor: Arc::new(IcmpExecutor::new(
+                            task.target.clone(),
+                            task_group.timeout.unwrap(),
+                        )),
                     })
-                    .expect("发送消息异常");
+                    .collect(),
+            );
+            let duration = task_group.interval.unwrap();
+            let tasks_clone = Arc::clone(&tasks); // 克隆 Arc 以供异步任务使用
+            tokio::spawn(async move {
+                loop {
+                    let mut handles = vec![];
+                    for task in tasks_clone.iter() {
+                        handles.push(tokio::spawn(Self::exec_task(task.clone())));
+                    }
 
-                    let elapsed = start_time.elapsed().as_millis();
-                    info!(
-                        "Ping {} --> {} --> Pong in {} ms",
-                        executor_name, task_target, elapsed
-                    );
+                    for handle in handles {
+                        handle.await.unwrap();
+                    }
 
-                    // Box::pin({
-                    //     async move {
-                    //         let start_time = Instant::now();
-                    //         trace!("开始执行任务: {}:{}", executor_name, task_desc);
-                    //
-                    //         tx.send(TargetStatus {
-                    //             task_type,
-                    //             target: task_target.clone(),
-                    //             is_online: match executor.exec() {
-                    //                 Ok(_result) => true,
-                    //                 Err(_err) => false,
-                    //             },
-                    //         })
-                    //         .expect("发送消息异常");
-                    //
-                    //         let elapsed = start_time.elapsed().as_millis();
-                    //         info!(
-                    //             "Ping {} --> {} --> Pong in {} ms",
-                    //             executor_name, task_target, elapsed
-                    //         );
-                    //     }
-                    // })
-                })?)
-                .await?;
+                    sleep(duration).await;
+                }
+            });
         }
-
-        debug!("启动任务调度器...");
-        self.scheduler.start().await
     }
 
-    pub async fn stop(&mut self) {
-        debug!("停止任务调度器...");
-        self.scheduler.shutdown().await.expect("任务调度器停止失败");
+    async fn exec_task(task: Task) {
+        let start_time = Instant::now();
+        let task_desc = format!("{:?}", task);
+        let executor_name = task.executor.get_name().clone();
+        trace!("开始执行任务: {}:{}", executor_name, task_desc);
+        task.target_status_tx
+            .send(TargetStatus {
+                task_type: task.task_type.clone(),
+                target: task.target.clone(),
+                is_online: match task.executor.exec() {
+                    Ok(_result) => true,
+                    Err(_err) => false,
+                },
+            })
+            .unwrap();
+
+        let elapsed = start_time.elapsed().as_millis();
+        info!(
+            "Ping {} --> {} --> Pong in {} ms",
+            executor_name, task.target, elapsed
+        );
     }
 }

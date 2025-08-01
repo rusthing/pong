@@ -50,12 +50,7 @@ async fn main() -> std::io::Result<()> {
 
     debug!("创建任务调度器...");
     let targets = Targets::new();
-    Scheduler::new(targets.clone_tx())
-        .await
-        .expect("创建任务调度器失败")
-        .start(config.tasks)
-        .await
-        .expect("启动任务调度器失败");
+    Scheduler::new(targets.clone_tx()).start(config.task_groups);
 
     debug!("创建Web服务器并运行...");
     WebServer::new(config.port.unwrap(), targets, prometheus_metrics)

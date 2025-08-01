@@ -5,16 +5,16 @@ edition = "2024"
 build = "build.rs"
 
 [dependencies]
-dns-lookup = "2.0.4"
-ping = "0.6.1"
-tokio-cron-scheduler = "0.14.0"
-tokio = { version = "1.47.0", features = ["rt", "rt-multi-thread", "macros", "signal"] }
 log = "0.4.27"
-env_logger = "0.11.8"
-chrono = "0.4.41"
-actix-web = "4.11.0"
+clap = { version = "4.5.42", features = ["derive"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_yaml = "0.9.34-deprecated"
-clap = { version = "4.5.42", features = ["derive"] }
+tokio = { version = "1.47.0", features = ["rt", "rt-multi-thread", "macros", "signal"] }
+actix-web = "4.11.0"
+dns-lookup = "2.0.4"
+chrono = "0.4.41"
+env_logger = "0.11.8"
+humantime = "2.2.0"
 strum_macros = "0.27.2"
+ping = "0.6.1"
 prometheus = "0.14.0"
