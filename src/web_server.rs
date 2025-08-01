@@ -21,7 +21,7 @@ async fn metrics(
     debug!("获取所有目标状态耗时: {}ms", elapsed);
     for (host, status) in statuses {
         // 更新不同标签的Gauge值
-        prometheus_metrics.update_metric(host, status.is_online);
+        prometheus_metrics.update_metric(host, status.elapsed);
     }
 
     // 收集指标数据
@@ -35,6 +35,7 @@ async fn metrics(
     // 返回响应
     HttpResponse::Ok().content_type("text/plain").body(buffer)
 }
+
 #[get("/health")]
 async fn health() -> impl Responder {
     "Ok"

@@ -1,7 +1,7 @@
 use crate::config::TaskType;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
@@ -13,8 +13,8 @@ pub struct TargetStatus {
     pub task_type: TaskType,
     /// 目标
     pub target: String,
-    /// 是否在线
-    pub is_online: bool,
+    /// 耗时
+    pub elapsed: u128,
 }
 
 /// 目标管理
@@ -39,12 +39,11 @@ impl Targets {
                     let key = Self::calc_key(&new_status.task_type, &new_status.target);
                     let mut statuses = statuses_clone.lock().unwrap();
                     let old_status = statuses.get(&key);
-                    if old_status.is_none() || old_status.unwrap().is_online != new_status.is_online
-                    {
+                    if old_status.is_none() || old_status.unwrap().elapsed != new_status.elapsed {
                         statuses.insert(key, new_status);
                     }
                 }
-                sleep(Duration::from_secs(1));          // 注意要放在作用域外，先释放锁
+                sleep(Duration::from_secs(1)); // 注意要放在作用域外，先释放锁
             }
         });
         Self { tx, statuses }
@@ -63,5 +62,4 @@ impl Targets {
     pub fn get_all(&self) -> HashMap<String, TargetStatus> {
         self.statuses.lock().unwrap().clone()
     }
-
 }

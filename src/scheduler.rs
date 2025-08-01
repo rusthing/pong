@@ -81,18 +81,20 @@ impl Scheduler {
         let task_desc = format!("{:?}", task);
         let executor_name = task.executor.get_name().clone();
         trace!("开始执行任务: {}:{}", executor_name, task_desc);
+        let exec_result = task.executor.exec();
+        let elapsed = if exec_result.is_ok() {
+            start_time.elapsed().as_millis()
+        } else {
+            99999
+        };
         task.target_status_tx
             .send(TargetStatus {
                 task_type: task.task_type.clone(),
                 target: task.target.clone(),
-                is_online: match task.executor.exec() {
-                    Ok(_result) => true,
-                    Err(_err) => false,
-                },
+                elapsed,
             })
             .unwrap();
 
-        let elapsed = start_time.elapsed().as_millis();
         info!(
             "Ping {} --> {} --> Pong in {} ms",
             executor_name, task.target, elapsed
