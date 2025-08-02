@@ -1,13 +1,23 @@
 use crate::executor::Executor;
+use crate::icmp_ping::IcmpPing;
 use dns_lookup::lookup_host;
-use log::{error, info};
-use std::net::IpAddr;
-use std::time::Duration;
+use log::{error, info, trace};
+use pnet::packet::icmp;
+use pnet::packet::icmp::IcmpTypes::EchoReply;
+use pnet::packet::icmpv6;
+use pnet::packet::ip::IpNextHeaderProtocols;
+use pnet::packet::{MutablePacket, Packet};
+use pnet::transport::TransportChannelType::Layer4;
+use pnet::transport::{icmp_packet_iter, transport_channel, TransportProtocol};
+use pnet::util::checksum;
+use std::net::{IpAddr, SocketAddr};
+use std::time::{Duration, Instant};
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct IcmpExecutor {
     ip_addr: IpAddr,
     timeout: Duration,
+    icmp_ping: IcmpPing,
 }
 
 impl IcmpExecutor {
@@ -18,7 +28,11 @@ impl IcmpExecutor {
     pub fn new(host: String, timeout: Duration) -> Self {
         // 解析主机的字符串成IP地址
         let ip_addr = Self::parse_host(&host).unwrap();
-        Self { ip_addr, timeout }
+        Self {
+            ip_addr,
+            timeout,
+            icmp_ping: IcmpPing::new(),
+        }
     }
 
     /// 解析主机的字符串成IP地址
@@ -47,14 +61,19 @@ impl Executor for IcmpExecutor {
     }
 
     fn exec(&self) -> Result<(), String> {
-        ping::new(self.ip_addr)
-            .timeout(self.timeout)
-            .send()
-            .map_err(|e| {
-                let msg = format!("ping {} 失败: {e}", self.ip_addr);
-                error!("{}", msg);
-                msg
-            })?;
-        Ok(())
+        trace!("开始执行 ICMP 任务: ping {}", self.ip_addr);
+        Ok(self
+            .icmp_ping
+            .ping(self.ip_addr, self.timeout)
+            .expect("ping失败"))
+        // ping::new(self.ip_addr)
+        //     .timeout(self.timeout)
+        //     .send()
+        //     .map_err(|e| {
+        //         let msg = format!("ping {} 失败: {e}", self.ip_addr);
+        //         error!("{}", msg);
+        //         msg
+        //     })?;
+        // Ok(())
     }
 }
