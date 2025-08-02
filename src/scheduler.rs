@@ -81,27 +81,24 @@ impl Scheduler {
         let task_desc = format!("{:?}", task);
         let executor_name = task.executor.get_name().clone();
         trace!("开始执行任务: {}:{}", executor_name, task_desc);
-        let exec_result = task.executor.exec();
-        let elapsed = start_time.elapsed().as_millis();
-        task.target_status_tx
-            .send(TargetStatus {
-                task_type: task.task_type.clone(),
-                target: task.target.clone(),
-                elapsed: if exec_result.is_ok() {
-                    elapsed as i64
-                } else {
-                    -1
-                },
-            })
-            .unwrap();
+        let elapsed = match task.executor.exec() {
+            Ok(_) => {
+                let elapsed = start_time.elapsed().as_millis() as i64;
+                info!(
+                    "Ping {} --> {} --> Pong in {} ms",
+                    executor_name, task.target, elapsed
+                );
+                elapsed
+            }
+            Err(_) => -1,
+        };
 
-        if exec_result.is_err() {
-            return;
-        }
-
-        info!(
-            "Ping {} --> {} --> Pong in {} ms",
-            executor_name, task.target, elapsed
-        );
+        let target_status = TargetStatus {
+            task_type: task.task_type.clone(),
+            target: task.target.clone(),
+            elapsed,
+        };
+        trace!("更新目标状态: {:?}", target_status);
+        task.target_status_tx.send(target_status).unwrap();
     }
 }
