@@ -14,7 +14,7 @@ pub struct TargetStatus {
     /// 目标
     pub target: String,
     /// 耗时
-    pub elapsed: u128,
+    pub elapsed: i64,
 }
 
 /// 目标管理

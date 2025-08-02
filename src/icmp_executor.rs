@@ -1,6 +1,6 @@
 use crate::executor::Executor;
 use dns_lookup::lookup_host;
-use log::error;
+use log::{error, info};
 use std::net::IpAddr;
 use std::time::Duration;
 
@@ -35,7 +35,9 @@ impl IcmpExecutor {
 
         // 不是 IP，尝试 DNS 解析
         let mut addrs = lookup_host(host).map_err(|e| format!("DNS解析失败: {e}"))?;
-        addrs.pop().ok_or_else(|| format!("无法解析主机名: {host}"))
+        let ip_addr = addrs.pop().expect(&format!("无法解析主机名: {host}"));
+        info!("解析主机名: {host} -> {}", ip_addr.to_string());
+        Ok(ip_addr)
     }
 }
 
@@ -49,7 +51,7 @@ impl Executor for IcmpExecutor {
             .timeout(self.timeout)
             .send()
             .map_err(|e| {
-                let msg = format!("Ping失败: {e}");
+                let msg = format!("ping {} 失败: {e}", self.ip_addr);
                 error!("{}", msg);
                 msg
             })?;

@@ -53,6 +53,7 @@ impl WebServer {
     ) -> Self {
         let targets_data = Data::new(targets);
         let prometheus_metrics_data = Data::new(prometheus_metrics);
+        let port = web_server_config.port.unwrap();
         let mut server = HttpServer::new(move || {
             App::new()
                 .app_data(targets_data.clone())
@@ -62,13 +63,12 @@ impl WebServer {
         });
 
         for bind in web_server_config.bind {
-            let port = web_server_config.port.unwrap();
             server = server.bind((bind, port)).unwrap();
         }
 
-        Self {
-            server: server.run(),
-        }
+        let server = server.run();
+
+        Self { server }
     }
 
     pub async fn run(self) {

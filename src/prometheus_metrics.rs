@@ -39,10 +39,10 @@ impl PrometheusMetrics {
     /// # 参数
     /// `host` - 主机名
     /// `elapsed` - 耗时
-    pub fn update_metric(&self, host: String, elapsed: u128) {
+    pub fn update_metric(&self, host: String, elapsed: i64) {
         self.host_activity_gauges
             .with_label_values(&[host])
-            .set(elapsed as i64);
+            .set(elapsed);
     }
 
     /// 获取指标集
