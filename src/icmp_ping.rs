@@ -15,8 +15,8 @@ pub enum PingError {
     Io(#[from] std::io::Error),
     #[error("Timeout")]
     Timeout,
-    #[error("Invalid reply")]
-    InvalidReply,
+    #[error("Invalid reply: {0}")]
+    InvalidReply(String),
 }
 
 /// 计算 ICMP 校验和（RFC 1071）
@@ -34,7 +34,7 @@ fn checksum_v4(buf: &[u8]) -> u16 {
 }
 
 /// 构造 ICMPv4 Echo Request 包
-fn build_icmpv4_echo(id: u16, seq: u16) -> Vec<u8> {
+fn build_icmp_v4_echo(id: u16, seq: u16) -> Vec<u8> {
     let mut buf = vec![0; 8];
     buf[0] = 8; // type = Echo Request
     buf[1] = 0; // code = 0
@@ -46,7 +46,7 @@ fn build_icmpv4_echo(id: u16, seq: u16) -> Vec<u8> {
 }
 
 /// 构造 ICMPv6 Echo Request 包
-fn build_icmpv6_echo(id: u16, seq: u16) -> Vec<u8> {
+fn build_icmp_v6_echo(id: u16, seq: u16) -> Vec<u8> {
     let mut buf = vec![0; 8];
     buf[0] = 128; // type = Echo Request
     buf[1] = 0; // code = 0
@@ -81,7 +81,7 @@ impl IcmpPing {
     }
 
     pub fn ping(&self, dst_ip: IpAddr, timeout: Duration) -> Result<(), PingError> {
-        trace!("Ping {} ....", dst_ip);
+        trace!("ping {} ....", dst_ip);
         let (domain, protocol, src_ip) = match dst_ip {
             IpAddr::V4(_) => (
                 Domain::IPV4,
@@ -110,8 +110,8 @@ impl IcmpPing {
 
         // 构造并发送
         let packet = match dst_ip {
-            IpAddr::V4(_) => build_icmpv4_echo(self.id, seq),
-            IpAddr::V6(_) => build_icmpv6_echo(self.id, seq),
+            IpAddr::V4(_) => build_icmp_v4_echo(self.id, seq),
+            IpAddr::V6(_) => build_icmp_v6_echo(self.id, seq),
         };
         sock.send_to(&packet, &dst_addr)?;
 
@@ -124,40 +124,36 @@ impl IcmpPing {
         match dst_ip {
             IpAddr::V4(_) => {
                 if reply.len() != 28 {
-                    error!(
+                    return Err(PingError::InvalidReply(format!(
                         "ICMPv4 reply length expect 28 bytes but {} bytes",
                         reply.len()
-                    );
-                    return Err(PingError::InvalidReply);
+                    )));
                 }
                 if &reply[(ICMP_V4_HEADER_LENGTH + 4)..(ICMP_V4_HEADER_LENGTH + 8)] != &packet[4..8]
                 {
-                    error!(
+                    return Err(PingError::InvalidReply(format!(
                         "ICMPv4 reply data is not correct! send-{:?} received-{:?}",
                         packet, reply
-                    );
-                    return Err(PingError::InvalidReply);
+                    )));
                 }
             }
             IpAddr::V6(_) => {
                 if reply.len() != 8 {
-                    error!(
+                    return Err(PingError::InvalidReply(format!(
                         "ICMPv6 reply length expect 8 bytes but {} bytes",
-                        reply.len()
-                    );
-                    return Err(PingError::InvalidReply);
+                        reply.len(),
+                    )));
                 }
                 if &reply[4..8] != &packet[4..8] {
-                    error!(
-                        "ICMPv4 reply data is not correct! send-{:?} received-{:?}",
+                    return Err(PingError::InvalidReply(format!(
+                        "ICMPv6 reply data is not correct! send-{:?} received-{:?}",
                         packet, reply
-                    );
-                    return Err(PingError::InvalidReply);
+                    )));
                 }
             }
         }
 
-        trace!("Ping {} success", dst_ip);
+        trace!("ping {} success", dst_ip);
         Ok(())
     }
 }

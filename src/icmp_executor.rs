@@ -2,16 +2,8 @@ use crate::executor::Executor;
 use crate::icmp_ping::IcmpPing;
 use dns_lookup::lookup_host;
 use log::{error, info, trace};
-use pnet::packet::icmp;
-use pnet::packet::icmp::IcmpTypes::EchoReply;
-use pnet::packet::icmpv6;
-use pnet::packet::ip::IpNextHeaderProtocols;
-use pnet::packet::{MutablePacket, Packet};
-use pnet::transport::TransportChannelType::Layer4;
-use pnet::transport::{icmp_packet_iter, transport_channel, TransportProtocol};
-use pnet::util::checksum;
-use std::net::{IpAddr, SocketAddr};
-use std::time::{Duration, Instant};
+use std::net::IpAddr;
+use std::time::Duration;
 
 #[derive(Clone)]
 pub struct IcmpExecutor {
@@ -62,18 +54,12 @@ impl Executor for IcmpExecutor {
 
     fn exec(&self) -> Result<(), String> {
         trace!("开始执行 ICMP 任务: ping {}", self.ip_addr);
-        Ok(self
-            .icmp_ping
+        self.icmp_ping
             .ping(self.ip_addr, self.timeout)
-            .expect("ping失败"))
-        // ping::new(self.ip_addr)
-        //     .timeout(self.timeout)
-        //     .send()
-        //     .map_err(|e| {
-        //         let msg = format!("ping {} 失败: {e}", self.ip_addr);
-        //         error!("{}", msg);
-        //         msg
-        //     })?;
-        // Ok(())
+            .map_err(|e| {
+                let msg = format!("ping {} fail: {e}", self.ip_addr);
+                error!("{}", msg);
+                msg
+            })
     }
 }

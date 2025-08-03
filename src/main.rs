@@ -3,7 +3,6 @@ use clap::Parser;
 use env_logger::Builder;
 use log::{debug, info};
 use pong::config::Config;
-use pong::icmp_ping::IcmpPing;
 use pong::prometheus_metrics::PrometheusMetrics;
 use pong::scheduler::Scheduler;
 use pong::targets::Targets;
@@ -37,40 +36,6 @@ async fn main() -> std::io::Result<()> {
             )
         })
         .init();
-
-    // IcmpPing::new()
-    //     .ping("::1".parse().unwrap(), std::time::Duration::from_secs(1))
-    //     .expect("ping error");
-    // IcmpPing::new()
-    //     .ping(
-    //         "127.0.0.1".parse().unwrap(),
-    //         std::time::Duration::from_secs(1),
-    //     )
-    //     .expect("ping error");
-    // IcmpPing::new()
-    //     .ping(
-    //         "192.168.1.1".parse().unwrap(),
-    //         std::time::Duration::from_secs(1),
-    //     )
-    //     .expect("ping error");
-    // IcmpPing::new()
-    //     .ping(
-    //         "157.148.69.186".parse().unwrap(),
-    //         std::time::Duration::from_secs(1),
-    //     )
-    //     .expect("ping error");
-    // IcmpPing::new()
-    //     .ping(
-    //         "199.16.158.9".parse().unwrap(),
-    //         std::time::Duration::from_secs(1),
-    //     )
-    //     .expect("ping error");
-    // IcmpPing::new()
-    //     .ping(
-    //         "2001::1".parse().unwrap(),
-    //         std::time::Duration::from_secs(1),
-    //     )
-    //     .expect("ping error");
 
     info!("程序正在启动……");
 

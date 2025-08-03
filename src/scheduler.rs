@@ -5,9 +5,9 @@ use crate::targets::TargetStatus;
 use log::{debug, info, trace};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
-use std::sync::mpsc::Sender;
 use std::sync::Arc;
-use tokio::time::{sleep, Instant};
+use std::sync::mpsc::Sender;
+use tokio::time::{Instant, sleep};
 
 #[derive(Clone)]
 struct Task {
@@ -61,14 +61,15 @@ impl Scheduler {
             let tasks_clone = Arc::clone(&tasks); // 克隆 Arc 以供异步任务使用
             tokio::spawn(async move {
                 loop {
-                    let mut handles = vec![];
+                    // let mut handles = vec![];
                     for task in tasks_clone.iter() {
-                        handles.push(tokio::spawn(Self::exec_task(task.clone())));
+                        // handles.push(tokio::spawn(Self::exec_task(task.clone())));
+                        Self::exec_task(task.clone());
                     }
 
-                    for handle in handles {
-                        handle.await.unwrap();
-                    }
+                    // for handle in handles {
+                    //     handle.await.expect("任务执行失败");
+                    // }
 
                     sleep(duration).await;
                 }
@@ -76,7 +77,7 @@ impl Scheduler {
         }
     }
 
-    async fn exec_task(task: Task) {
+    fn exec_task(task: Task) {
         let start_time = Instant::now();
         let task_desc = format!("{:?}", task);
         let executor_name = task.executor.get_name().clone();
