@@ -1,8 +1,8 @@
 use crate::duration_serde;
 use log::info;
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::time::Duration;
+use std::{env, fs};
 use strum_macros::Display;
 
 /// 配置文件结构
@@ -84,6 +84,9 @@ impl Config {
             fs::read_to_string(path.unwrap()).expect("读取配置文件失败")
         } else {
             let path = String::from("pong.yml");
+            let mut exe_path = env::current_exe().expect("获取可执行文件失败");
+            exe_path.pop(); // 移除可执行文件名
+            let path = exe_path.join(&path);
             fs::read_to_string(path).expect("读取配置文件失败")
         };
 
