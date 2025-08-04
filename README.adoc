@@ -1,0 +1,165 @@
+= Pong
+:sectnums:
+:toc:
+:toc-placement!:
+
+使用Rust语言实现的监听目标运行状态的 Prometheus exporter 的插件。
+
+toc::[]
+
+== 概述
+
+使用Rust语言实现的监听目标运行状态的 Prometheus exporter 的插件。目前实现的功能如下:
+
+* 模仿ping使用ICMP协议发送数据包，轮询目标进程状态，并返回结果
+* 启动Web服务，提供接口给 Prometheus Server 采集数据
+
+== 功能特性
+
+* Rust语言跨平台编译，支持Windows、Linux、MacOS
+* Prometheus exporter 的插件
+* ICMP协议发送ping数据包
+* 异步架构，性能高，占内存和CPU资源低，稳定
+
+== 环境要求
+
+- Rust工具链 (https://www.rust-lang.org/tools/install[安装Rust])
+- Cargo包管理器 (随Rust一同安装)
+- 可选: 跨平台编译工具链 (https://github.com/cross-rs/cross)
+
+== 安装说明
+
+克隆代码仓库并进入项目目录：
+
+[source,bash]
+----
+git clone <repository-url>
+cd pong
+----
+
+构建项目：
+
+[source,bash]
+----
+cargo build
+----
+
+== 开发相关
+
+以开发模式运行：
+
+[source,bash]
+----
+cargo run
+----
+
+运行测试：
+
+[source,bash]
+----
+cargo test
+----
+
+检查代码问题：
+
+[source,bash]
+----
+cargo check
+----
+
+== 编译相关
+
+编译为Linux x86_64下的可执行文件：
+
+[source,bash]
+----
+cargo build --release --target x86_64-unknown-linux-musl
+----
+
+== 部署相关
+
+=== Supervisor方式
+
+* 初始化
++
+./etc/supervisord.conf
+[source,ini]
+----
+....
+
+[include]
+files = supervisord.d/*.ini
+----
++
+创建日志目录：
++
+[source,shell]
+----
+mkdir -p /var/log/pong/
+----
++
+./etc/supervisord.d/pong.ini
+[source,ini]
+----
+[program:pong]
+directory = /root/opt/pong/
+command = /root/opt/pong/pong
+autostart = true
+startsecs = 10
+autorestart = true
+startretries = 100000
+stdout_logfile = /var/log/pong/pong.log
+----
+
+* supervisord 服务管理
++
+[,shell]
+----
+# 重启服务
+systemctl restart supervisord
+# 查看服务启动状态
+systemctl status supervisord
+# 配置 supervisord 开机自启
+systemctl enable supervisord
+----
+
+* supervisor 进程管理（监听/启动/停止/重启）
++
+[source,shell]
+----
+# 查看所有进程的状态
+supervisorctl status
+# 停止 pong
+supervisorctl stop pong
+# 启动 pong
+supervisorctl start pong
+# 重启 pong
+supervisorctl restart pong
+# 配置文件修改后可以使用该命令加载新的配置
+supervisorctl update
+# 重新启动配置中的所有程序
+supervisorctl reload
+----
+
+* 查看日志输出
++
+[source,shell]
+----
+supervisorctl tail -f pong stderr
+----
+
+=== 检查服务是否正常运行
+
+[,shell]
+----
+curl 127.0.0.1:9780/health
+----
+
+=== 手动获取服务指标
+
+[,shell]
+----
+curl 127.0.0.1:9780/metrics
+----
+
+
