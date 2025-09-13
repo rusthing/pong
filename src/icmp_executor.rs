@@ -41,7 +41,7 @@ impl IcmpExecutor {
 
         // 不是 IP，尝试 DNS 解析
         let mut addrs = lookup_host(host).map_err(|e| format!("DNS解析失败: {e}"))?;
-        let ip_addr = addrs.pop().expect(&format!("无法解析主机名: {host}"));
+        let ip_addr = addrs.next().ok_or_else(|| format!("无法解析主机名: {host}"))?;
         info!("解析主机名: {host} -> {}", ip_addr.to_string());
         Ok(ip_addr)
     }
