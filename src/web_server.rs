@@ -1,10 +1,10 @@
-use crate::config::WebServerConfig;
+use crate::config::CONFIG;
 use crate::prometheus_metrics::PrometheusMetrics;
 use crate::targets::Targets;
 use actix_web::dev::Server;
 use actix_web::web::Data;
 use actix_web::{get, App, HttpResponse, HttpServer, Responder};
-use log::debug;
+use log::{debug, info};
 use prometheus::{Encoder, TextEncoder};
 use tokio::time::Instant;
 
@@ -46,11 +46,10 @@ pub struct WebServer {
 }
 
 impl WebServer {
-    pub fn new(
-        web_server_config: WebServerConfig,
-        targets: Targets,
-        prometheus_metrics: PrometheusMetrics,
-    ) -> Self {
+    pub fn new(targets: Targets, prometheus_metrics: PrometheusMetrics) -> Self {
+        let web_server_config = CONFIG.get().unwrap().web_server.clone();
+        info!("创建Web服务器({:?})并运行...", web_server_config);
+
         let targets_data = Data::new(targets);
         let prometheus_metrics_data = Data::new(prometheus_metrics);
         let port = web_server_config.port.unwrap();

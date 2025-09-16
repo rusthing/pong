@@ -2,7 +2,7 @@ use chrono::Local;
 use clap::Parser;
 use env_logger::Builder;
 use log::{debug, info};
-use pong::config::Config;
+use pong::config::{Config, CONFIG};
 use pong::prometheus_metrics::PrometheusMetrics;
 use pong::scheduler::Scheduler;
 use pong::targets::Targets;
@@ -57,18 +57,16 @@ async fn main() -> std::io::Result<()> {
 
     debug!("加载配置文件...");
     let config = Config::new(args.config_file, args.port);
+    CONFIG.set(config).expect("无法设置全局配置");
 
     debug!("创建PrometheusMetrics...");
     let prometheus_metrics = PrometheusMetrics::new();
 
     debug!("创建任务调度器...");
     let targets = Targets::new();
-    Scheduler::new(targets.clone_tx()).start(config.task_groups);
+    Scheduler::new(targets.clone_tx()).start(CONFIG.get().unwrap().clone().task_groups);
 
-    info!("创建Web服务器({:?})并运行...", config.web_server);
-    WebServer::new(config.web_server, targets, prometheus_metrics)
-        .run()
-        .await;
+    WebServer::new(targets, prometheus_metrics).run().await;
 
     info!("退出程序");
     Ok(())

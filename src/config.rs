@@ -1,12 +1,16 @@
 use crate::duration_serde;
 use log::info;
 use serde::{Deserialize, Serialize};
+use std::sync::OnceLock;
 use std::time::Duration;
 use std::{env, fs};
 use strum_macros::Display;
 
+/// 全局配置
+pub static CONFIG: OnceLock<Config> = OnceLock::new();
+
 /// 配置文件结构
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     /// Web服务器
     #[serde(default = "web_server_default")]
@@ -23,7 +27,7 @@ fn web_server_default() -> WebServerConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WebServerConfig {
     /// 绑定的IP地址
     #[serde(default = "bind_default")]
@@ -49,7 +53,7 @@ pub enum TaskType {
     ICMP,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TaskGroupConfig {
     /// 任务组执行间隔
     #[serde(with = "duration_serde", default = "interval_default")]
@@ -69,7 +73,7 @@ fn timeout_default() -> Option<Duration> {
 }
 
 /// 任务属性
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TaskConfig {
     /// 任务类型
     pub task_type: TaskType,
