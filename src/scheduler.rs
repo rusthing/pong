@@ -2,12 +2,13 @@ use crate::config::{TaskGroupConfig, TaskType};
 use crate::executor::Executor;
 use crate::icmp_executor::IcmpExecutor;
 use crate::targets::TargetStatus;
+use crate::tcp_executor::TcpExecutor;
 use log::{debug, info, trace};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
-use std::sync::Arc;
 use std::sync::mpsc::Sender;
-use tokio::time::{Instant, sleep};
+use std::sync::Arc;
+use tokio::time::{sleep, Instant};
 
 #[derive(Clone)]
 struct Task {
@@ -50,10 +51,16 @@ impl Scheduler {
                         task_type: task.task_type.clone(),
                         target: task.target.clone(),
                         target_status_tx: self.target_status_tx.clone(),
-                        executor: Arc::new(IcmpExecutor::new(
-                            task.target.clone(),
-                            task_group.timeout.unwrap(),
-                        )),
+                        executor: match task.task_type {
+                            TaskType::ICMP => Arc::new(IcmpExecutor::new(
+                                task.target.clone(),
+                                task_group.timeout.unwrap(),
+                            )),
+                            TaskType::TCP => Arc::new(TcpExecutor::new(
+                                task.target.clone(),
+                                task_group.timeout.unwrap(),
+                            )),
+                        },
                     })
                     .collect(),
             );

@@ -51,6 +51,9 @@ pub enum TaskType {
     /// icmp
     #[serde(rename = "icmp")]
     ICMP,
+    /// tcp
+    #[serde(rename = "tcp")]
+    TCP,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
