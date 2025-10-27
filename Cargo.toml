@@ -3,6 +3,14 @@ name = "pong"
 version = "0.3.0"
 edition = "2024"
 authors = ["zbz"]
+keywords = ["ping", "icmp", "tcp", "http"]
+description = "A network monitoring tool that performs ICMP, TCP, and HTTP pings"
+license = "MIT"
+categories = ["network-programming", "command-line-utilities"]
+repository = "https://github.com/rusthing/pong"
+homepage = "https://github.com/rusthing/pong"
+documentation = "https://github.com/rusthing/pong/blob/master/README.adoc"
+readme = "README.adoc"
 
 [dependencies]
 log = "0.4.28"
