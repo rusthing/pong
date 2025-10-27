@@ -1,10 +1,10 @@
+use crate::settings::pong_settings::TaskType;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
-use crate::settings::settings::TaskType;
 
 /// 目标状态
 #[derive(Serialize, Clone, Debug)]

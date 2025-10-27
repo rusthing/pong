@@ -1,23 +1,13 @@
-use log::{error, trace};
+use crate::ping_error::PingError;
+use log::trace;
 use socket2::{Domain, Protocol, SockAddr, Socket, Type};
 use std::mem::MaybeUninit;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::time::Duration;
-use thiserror::Error;
 
 /// ICMPv4 头部长度
 const ICMP_V4_HEADER_LENGTH: usize = 20;
-
-#[derive(Debug, Error)]
-pub enum PingError {
-    #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("Timeout")]
-    Timeout,
-    #[error("Invalid reply: {0}")]
-    InvalidReply(String),
-}
 
 /// 计算 ICMP 校验和（RFC 1071）
 /// 按 16 位分组累加，处理奇数长度数据，最后取反

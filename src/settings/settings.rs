@@ -1,11 +1,9 @@
-use crate::duration_serde;
+use crate::settings::pong_settings::PongSettings;
 use log::info;
 use robotech::settings::get_settings;
 use robotech::web_server::WebServerSettings;
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
-use std::time::Duration;
-use strum_macros::Display;
 
 /// 全局配置
 pub static SETTINGS: OnceLock<Settings> = OnceLock::new();
@@ -14,50 +12,11 @@ pub static SETTINGS: OnceLock<Settings> = OnceLock::new();
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct Settings {
-    /// 任务列表
-    pub task_groups: Vec<TaskGroupSettings>,
+    /// Pong的配置
+    pub pong: PongSettings,
     /// Web服务器
     #[serde(default = "WebServerSettings::default")]
     pub web_server: WebServerSettings,
-}
-
-#[derive(Debug, Serialize, Deserialize, Display, Clone)]
-pub enum TaskType {
-    /// icmp
-    #[serde(rename = "icmp")]
-    ICMP,
-    /// tcp
-    #[serde(rename = "tcp")]
-    TCP,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TaskGroupSettings {
-    /// 任务组执行间隔
-    #[serde(with = "duration_serde", default = "interval_default")]
-    pub interval: Option<Duration>,
-    /// 超时时间
-    #[serde(with = "duration_serde", default = "timeout_default")]
-    pub timeout: Option<Duration>,
-    /// 任务列表
-    pub tasks: Vec<TaskSettings>,
-}
-
-fn interval_default() -> Option<Duration> {
-    Some(Duration::from_secs(3)) // 默认 3 秒
-}
-fn timeout_default() -> Option<Duration> {
-    Some(Duration::from_secs(5)) // 默认 5 秒
-}
-
-/// 任务属性
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "kebab-case")]
-pub struct TaskSettings {
-    /// 任务类型
-    pub task_type: TaskType,
-    /// 目标
-    pub target: String,
 }
 
 /// # 创建新的配置实例
@@ -85,11 +44,11 @@ pub fn init_settings(path: Option<String>, port: Option<u16>) {
     }
 
     info!("检查配置是否符合规范...");
-    if settings.task_groups.is_empty() {
+    if settings.pong.task_groups.is_empty() {
         panic!("尚未配置task_groups(任务组)项");
     }
 
-    for task_group in settings.task_groups.iter_mut() {
+    for task_group in settings.pong.task_groups.iter_mut() {
         if task_group.tasks.is_empty() {
             panic!("任务组尚未配置任务");
         }

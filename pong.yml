@@ -2,22 +2,34 @@ web-server:
   bind:
     - 0.0.0.0
     - '::'
-task-groups:
-  - tasks:
-      - task-type: icmp
-        target: www.google.com
-      - task-type: icmp
-        target: 127.0.0.1
-      - task-type: icmp
-        target: 192.168.1.1
-      - task-type: icmp
-        target: www.baidu.com
-      - task-type: tcp
-        target: 192.168.1.60:19080
-    interval: 2s
-    timeout: 5s
-#  - tasks:
-#      - taskType: icmp
-#        target: www.google.com
-#    interval: 2s
-#    timeout: 5s
+pong:
+  task-groups:
+#    - tasks:
+#        - task-type: icmp
+#          target: www.google.com
+#        - task-type: icmp
+#          target: 127.0.0.1
+#        - task-type: icmp
+#          target: 192.168.1.1
+#        - task-type: icmp
+#          target: www.baidu.com
+#        - task-type: tcp
+#          target: 192.168.1.60:19080
+#      interval: 2s
+#      timeout: 5s
+#    - tasks:
+#        - task-type: tcp
+#          target: www.google.com:443
+#        - task-type: tcp
+#          target: www.baidu.com:443
+#      interval: 2s
+#      timeout: 5s
+    - tasks:
+        - task-type: http
+          target: https://www.google.com
+        - task-type: http
+          target: https://www.baidu.com
+        - task-type: http
+          target: http://192.168.1.60:19080
+      interval: 2s
+      timeout: 5s

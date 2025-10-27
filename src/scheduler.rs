@@ -1,23 +1,29 @@
 use crate::executor::Executor;
-use crate::icmp_executor::IcmpExecutor;
-use crate::settings::settings::{TaskGroupSettings, TaskType};
+use crate::settings::pong_settings::{TaskGroupSettings, TaskType};
 use crate::targets::TargetStatus;
-use crate::tcp_executor::TcpExecutor;
-use log::{debug, info, trace};
+use crate::task::http::http_executor::HttpExecutor;
+use crate::task::icmp::icmp_executor::IcmpExecutor;
+use crate::task::tcp::tcp_executor::TcpExecutor;
+use log::{debug, error, info, trace};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use tokio::time::{sleep, Instant};
 
+/// 代表一个可执行的任务单元
 #[derive(Clone)]
 struct Task {
+    /// 任务类型，目前支持 ICMP / TCP /HTTP
     task_type: TaskType,
+    /// 目标地址，可以是 IP 地址或域名
     target: String,
+    /// 用于发送目标状态更新的通道发送端
     target_status_tx: Sender<TargetStatus>,
+    /// 执行器实例，根据任务类型确定具体的执行方式
     executor: Arc<dyn Executor + Send + Sync>,
 }
-
+/// 为 Task 结构体实现 Debug trait，用于调试时打印任务信息
 impl Debug for Task {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("Task")
@@ -28,6 +34,12 @@ impl Debug for Task {
     }
 }
 
+/// 任务调度器，负责管理和执行不同类型的任务组
+///
+/// Scheduler 负责接收任务组配置，将其转换为可执行的任务，并按照指定的时间间隔
+/// 循环执行这些任务。它支持多种任务类型，如 ICMP ping 和 TCP 连接测试。
+///
+/// 每个任务执行后会通过通道发送目标状态更新，以便其他组件可以监听和处理结果。
 pub struct Scheduler {
     /// 目标状态的消息发送通道
     target_status_tx: Sender<TargetStatus>,
@@ -60,6 +72,10 @@ impl Scheduler {
                                 task.target.clone(),
                                 task_group.timeout.unwrap(),
                             )),
+                            TaskType::HTTP => Arc::new(HttpExecutor::new(
+                                task.target.clone(),
+                                task_group.timeout.unwrap(),
+                            )),
                         },
                     })
                     .collect(),
@@ -71,7 +87,7 @@ impl Scheduler {
                     // let mut handles = vec![];
                     for task in tasks_clone.iter() {
                         // handles.push(tokio::spawn(Self::exec_task(task.clone())));
-                        Self::exec_task(task.clone());
+                        Self::exec_task(task.clone()).await;
                     }
 
                     // for handle in handles {
@@ -84,12 +100,12 @@ impl Scheduler {
         }
     }
 
-    fn exec_task(task: Task) {
+    async fn exec_task(task: Task) {
         let start_time = Instant::now();
         let task_desc = format!("{:?}", task);
         let executor_name = task.executor.get_name().clone();
         trace!("开始执行任务: {}:{}", executor_name, task_desc);
-        let elapsed = match task.executor.exec() {
+        let elapsed = match task.executor.exec().await {
             Ok(_) => {
                 let elapsed = start_time.elapsed().as_millis() as i64;
                 info!(
@@ -98,7 +114,13 @@ impl Scheduler {
                 );
                 elapsed
             }
-            Err(_) => -1,
+            Err(e) => {
+                error!(
+                    "Ping {} --> {} --> Failed {}",
+                    executor_name, task.target, e
+                );
+                -1
+            }
         };
 
         let target_status = TargetStatus {

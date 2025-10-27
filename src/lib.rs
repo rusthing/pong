@@ -1,13 +1,8 @@
-pub mod cst;
-pub mod duration_serde;
 pub mod executor;
-pub mod icmp_executor;
-pub mod icmp_ping;
-pub mod prometheus_metrics;
+pub mod metrics;
+pub mod ping_error;
 pub mod scheduler;
 pub mod settings;
 pub mod targets;
-pub mod tcp_executor;
-pub mod tcp_ping;
-pub mod tcp_utils;
+pub mod task;
 pub mod web_service_config;

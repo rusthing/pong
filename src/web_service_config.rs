@@ -1,4 +1,4 @@
-use crate::prometheus_metrics::PrometheusMetrics;
+use crate::metrics::prometheus_metrics::PrometheusMetrics;
 use crate::scheduler::Scheduler;
 use crate::settings::settings::SETTINGS;
 use crate::targets::Targets;
@@ -51,7 +51,7 @@ pub fn web_service_config(cfg: &mut web::ServiceConfig) {
 
     debug!("创建任务调度器...");
     let targets = Targets::new();
-    Scheduler::new(targets.clone_tx()).start(SETTINGS.get().unwrap().clone().task_groups);
+    Scheduler::new(targets.clone_tx()).start(SETTINGS.get().unwrap().clone().pong.task_groups);
 
     let targets_data = Data::new(targets);
     let prometheus_metrics_data = Data::new(prometheus_metrics);
