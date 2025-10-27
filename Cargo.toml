@@ -7,10 +7,7 @@ authors = ["zbz"]
 [dependencies]
 log = "0.4.28"
 clap = { version = "4.5.47", features = ["derive"] }
-chrono = "0.4.42"
-env_logger = "0.11.8"
 serde = { version = "1.0.219", features = ["derive"] }
-serde_yaml = "0.9.34-deprecated"
 humantime = "2.3.0"
 strum_macros = "0.27.2"
 tokio = { version = "1.47.1", features = ["rt", "rt-multi-thread", "macros", "signal"] }
@@ -19,3 +16,4 @@ thiserror = "2.0.16"
 dns-lookup = "3.0.0"
 prometheus = "0.14.0"
 socket2 = "0.6.0"
+robotech = { version = "0.8.0", features = ["web"] }

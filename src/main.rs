@@ -1,13 +1,10 @@
-use chrono::Local;
 use clap::Parser;
-use env_logger::Builder;
-use log::{debug, info};
-use pong::config::{Config, CONFIG};
-use pong::prometheus_metrics::PrometheusMetrics;
-use pong::scheduler::Scheduler;
-use pong::targets::Targets;
-use pong::web_server::WebServer;
-use std::io::Write;
+use log::info;
+use pong::settings::settings::{init_settings, SETTINGS};
+use pong::web_service_config::web_service_config;
+use robotech::env::init_env;
+use robotech::log::log::init_log;
+use robotech::web_server::start_web_server;
 
 /// 网络监控工具
 ///
@@ -36,37 +33,23 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    // 初始化日志实现库
-    Builder::from_default_env()
-        // 自定义日志格式
-        .format(|buf, record| {
-            writeln!(
-                buf,
-                "{} [{}] {}",
-                Local::now().format("%Y-%m-%d %H:%M:%S"),
-                format!("{:<5}", record.level()),
-                record.args()
-            )
-        })
-        .init();
-
     info!("程序正在启动……");
 
-    debug!("解析命令行参数...");
+    info!("初始化环境变量...");
+    init_env();
+
+    info!("初始化日志系统...");
+    init_log()?;
+
+    info!("解析命令行参数...");
     let args = Args::parse();
 
-    debug!("加载配置文件...");
-    let config = Config::new(args.config_file, args.port);
-    CONFIG.set(config).expect("无法设置全局配置");
+    info!("初始化设置选项...");
+    init_settings(args.config_file, args.port);
 
-    debug!("创建PrometheusMetrics...");
-    let prometheus_metrics = PrometheusMetrics::new();
-
-    debug!("创建任务调度器...");
-    let targets = Targets::new();
-    Scheduler::new(targets.clone_tx()).start(CONFIG.get().unwrap().clone().task_groups);
-
-    WebServer::new(targets, prometheus_metrics).run().await;
+    // 启动Web服务
+    let web_server_settings = SETTINGS.get().unwrap().web_server.clone();
+    start_web_server(web_server_settings, web_service_config).await;
 
     info!("退出程序");
     Ok(())

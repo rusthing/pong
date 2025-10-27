@@ -1,6 +1,6 @@
-use crate::config::{TaskGroupConfig, TaskType};
 use crate::executor::Executor;
 use crate::icmp_executor::IcmpExecutor;
+use crate::settings::settings::{TaskGroupSettings, TaskType};
 use crate::targets::TargetStatus;
 use crate::tcp_executor::TcpExecutor;
 use log::{debug, info, trace};
@@ -38,7 +38,7 @@ impl Scheduler {
         Self { target_status_tx }
     }
 
-    pub fn start(&self, task_groups: Vec<TaskGroupConfig>) {
+    pub fn start(&self, task_groups: Vec<TaskGroupSettings>) {
         debug!("启动任务调度器...");
         for task_group in task_groups.into_iter() {
             info!("添加任务组: {:?}", task_group);
