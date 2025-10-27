@@ -52,6 +52,7 @@ fn timeout_default() -> Option<Duration> {
 
 /// 任务属性
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "kebab-case")]
 pub struct TaskSettings {
     /// 任务类型
     pub task_type: TaskType,
