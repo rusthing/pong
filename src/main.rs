@@ -1,7 +1,7 @@
 use clap::Parser;
 use log::info;
-use pong::settings::settings::{init_settings, SETTINGS};
-use pong::web_service_config::web_service_config;
+use pong_rs::settings::settings::{init_settings, SETTINGS};
+use pong_rs::web_service_config::web_service_config;
 use robotech::env::init_env;
 use robotech::log::log::init_log;
 use robotech::web_server::start_web_server;
