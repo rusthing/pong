@@ -2,6 +2,10 @@ web-server:
   bind:
     - 0.0.0.0
     - '::'
+  port: 6780
+  listen:
+    - '[::]:6781'
+    - '[::1]:6781'
 pong:
   task-groups:
     - tasks:
