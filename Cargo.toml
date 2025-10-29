@@ -1,6 +1,6 @@
 [package]
 name = "pong-rs"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2024"
 authors = ["zbz"]
 keywords = ["ping", "icmp", "tcp", "http"]
@@ -24,5 +24,9 @@ prometheus = "0.14.0"
 socket2 = "0.6.1"
 reqwest = { version = "0.12.24", default-features = false, features = ["rustls-tls"] }
 async-trait = "0.1.89"
-wheel-rs = "0.2.4"
-robotech = { version = "0.9.6", features = ["web"] }
+wheel-rs = "0.3.0"
+robotech = { version = "0.9.8", features = ["web"] }
+
+[patch.crates-io]
+wheel-rs = { path = "../wheel-rs" }
+robotech = { path = "../robotech-rs" }

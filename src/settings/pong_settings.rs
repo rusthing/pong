@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use strum_macros::Display;
-use wheel_rs::serde::duration_serde;
+use wheel_rs::serde::duration_option_serde;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "kebab-case")]
@@ -17,10 +17,10 @@ pub struct PongSettings {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TaskGroupSettings {
     /// 任务组执行间隔
-    #[serde(with = "duration_serde", default = "interval_default")]
+    #[serde(with = "duration_option_serde", default = "interval_default")]
     pub interval: Option<Duration>,
     /// 超时时间
-    #[serde(with = "duration_serde", default = "timeout_default")]
+    #[serde(with = "duration_option_serde", default = "timeout_default")]
     pub timeout: Option<Duration>,
     /// 任务列表
     pub tasks: Vec<TaskSettings>,
