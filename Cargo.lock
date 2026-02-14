@@ -1704,6 +1704,8 @@ dependencies = [
 [[package]]
 name = "robotech"
 version = "0.9.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb40f35b83b694c0937e72a48d46aab005673decd10f3b2ae5bb376201698682"
 dependencies = [
  "actix-web",
  "chrono",
@@ -2586,7 +2588,9 @@ dependencies = [
 
 [[package]]
 name = "wheel-rs"
-version = "0.3.0"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "383eeed793db3833779c43ac5fcf5a93bbf405460e12fb5412d97b9bb7bdf586"
 dependencies = [
  "dns-lookup",
  "humantime",
@@ -2988,3 +2992,11 @@ dependencies = [
  "cc",
  "pkg-config",
 ]
+
+[[patch.unused]]
+name = "robotech"
+version = "1.5.0"
+
+[[patch.unused]]
+name = "wheel-rs"
+version = "1.4.0"
