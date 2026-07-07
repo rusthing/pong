@@ -1,5 +1,5 @@
 use clap::Parser;
-use log::info;
+use tracing::info;
 use pong_rs::settings::settings::{init_settings, SETTINGS};
 use pong_rs::web_service_config::web_service_config;
 use robotech::env::init_env;
