@@ -14,7 +14,7 @@ fn main() {
     // 获取输出目录路径
     let out_dir = std::env::var("OUT_DIR").unwrap();
 
-    // 复制配置文件到输出目录
+    // 复制应用的配置文件到输出目录
     copy_config_file(&out_dir, "toml");
     copy_config_file(&out_dir, "yml");
     copy_config_file(&out_dir, "json");

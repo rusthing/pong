@@ -39,11 +39,6 @@ async fn metrics(
     HttpResponse::Ok().content_type("text/plain").body(buffer)
 }
 
-#[get("/health")]
-async fn health() -> impl Responder {
-    "Ok"
-}
-
 /// # 配置WebService
 pub fn web_service_config(cfg: &mut web::ServiceConfig) {
     debug!("创建PrometheusMetrics...");
@@ -58,6 +53,5 @@ pub fn web_service_config(cfg: &mut web::ServiceConfig) {
 
     cfg.app_data(targets_data.clone())
         .app_data(prometheus_metrics_data.clone())
-        .service(metrics) // 获取指标
-        .service(health); // 健康检查
+        .service(metrics); // 获取指标
 }
