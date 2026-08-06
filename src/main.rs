@@ -39,7 +39,7 @@ async fn main() -> std::io::Result<()> {
     init_env();
 
     info!("初始化日志系统...");
-    init_log()?;
+    init_log().await?;
 
     info!("解析命令行参数...");
     let args = Args::parse();
